@@ -1,8 +1,17 @@
-from typing import Any, Optional
 from pytorch_lightning.utilities.types import STEP_OUTPUT
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
+
+
+class RMSELoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.mse = nn.MSELoss()
+
+    def forward(self, x1, x2):
+        loss = self.mse(x1, x2)
+        return torch.sqrt(loss)
 
 
 class SimplePipeline(pl.LightningModule):
@@ -10,14 +19,16 @@ class SimplePipeline(pl.LightningModule):
         super().__init__()
         self.model = model
         self.lr = lr
-        self.criterion = nn.MSELoss()
+        self.criterion = RMSELoss()
 
     def training_step(self, batch, batch_idx):
         loss = self.loop(batch)
+        self.log("Train Loss", loss, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx) -> STEP_OUTPUT | None:
         loss = self.loop(batch)
+        self.log("Valid Loss", loss, prog_bar=True)
         return loss
 
     def loop(self, batch):

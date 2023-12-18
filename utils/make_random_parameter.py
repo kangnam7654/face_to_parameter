@@ -44,5 +44,4 @@ def main(args):
 
 if __name__ == "__main__":
     args = get_args()
-    args.root_dir = "/Users/kangnam/project/face_to_parameter/data"
     main(args)

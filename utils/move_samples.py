@@ -8,11 +8,10 @@ from tqdm import tqdm
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--root_dir", type=str)
-    parser.add_argument("--n_samples", type=int, default=10000)
+    parser.add_argument("--n_samples", type=int, default=100)
     parser.add_argument("--out_dir", type=str)
     parser.add_argument("--resolution", type=int, default=512)
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 
 def main(args):
@@ -22,12 +21,15 @@ def main(args):
         out_dir.mkdir(parents=True, exist_ok=True)
 
     extensions = ["*.jpg", "*.png"]
-    files = sorted([root_dir.rglob(ext) for ext in extensions])
+    files = []
+    for ext in tqdm(extensions, desc="glob"):
+        globed = sorted(root_dir.rglob(ext))
+        files.extend(globed)
 
     samples = random.sample(files, args.n_samples)
     idx = 0
     for sample in tqdm(samples):
-        image = cv2.imread(sample)
+        image = cv2.imread(str(sample))
         image = cv2.resize(
             image, (args.resolution, args.resolution), interpolation=cv2.INTER_LANCZOS4
         )
