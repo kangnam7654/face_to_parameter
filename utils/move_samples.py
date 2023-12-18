@@ -1,12 +1,41 @@
 import argparse
 from pathlib import Path
+import random
+import cv2
+from tqdm import tqdm
+
 
 def get_args():
-    pass
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--root_dir", type=str)
+    parser.add_argument("--n_samples", type=int, default=10000)
+    parser.add_argument("--out_dir", type=str)
+    parser.add_argument("--resolution", type=int, default=512)
+    args = parser.parse_args()
+    return args
+
 
 def main(args):
-    directory = Path(args.root_dir)
-    print("EHHLP")
-    
+    root_dir = Path(args.root_dir)
+    out_dir = Path(args.out_dir)
+    if not out_dir.is_dir():
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+    extensions = ["*.jpg", "*.png"]
+    files = sorted([root_dir.rglob(ext) for ext in extensions])
+
+    samples = random.sample(files, args.n_samples)
+    idx = 0
+    for sample in tqdm(samples):
+        image = cv2.imread(sample)
+        image = cv2.resize(
+            image, (args.resolution, args.resolution), interpolation=cv2.INTER_LANCZOS4
+        )
+        out_file = out_dir.joinpath(f"{idx}".zfill(6) + ".jpg")
+        cv2.imwrite(str(out_file), image)
+        idx += 1
+
+
 if __name__ == "__main__":
-    main()
+    args = get_args()
+    main(args)
