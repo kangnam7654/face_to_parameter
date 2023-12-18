@@ -15,6 +15,7 @@ I did in WSL Ubuntu 22.04 & Mac OS 14.2, and recommend to use conda env
 - opencv-python
 - tqdm
 - numpy
+- facenet-pytorch
 ```
 
 ## Train
