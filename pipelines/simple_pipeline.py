@@ -15,11 +15,19 @@ class RMSELoss(nn.Module):
 
 
 class SimplePipeline(pl.LightningModule):
-    def __init__(self, model: nn.Module, lr):
+    def __init__(
+        self,
+        model: nn.Module,
+        lr,
+        style_transfer: bool = False,
+        style_transfer_model: nn.Module = None,
+    ):
         super().__init__()
         self.model = model
         self.lr = lr
         self.criterion = RMSELoss()
+        self.style_transfer = style_transfer
+        self.style_transfer_model = style_transfer_model
 
     def training_step(self, batch, batch_idx):
         loss = self.loop(batch)
@@ -33,6 +41,8 @@ class SimplePipeline(pl.LightningModule):
 
     def loop(self, batch):
         data, label = batch
+        if self.style_transfer:
+            data = self.style_transfer_model(data)
         out = self.model(data)
         loss = self.compute_criterion(out, label)
         return loss

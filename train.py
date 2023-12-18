@@ -8,6 +8,7 @@ from pytorch_lightning import Trainer
 import pytorch_lightning as pl
 
 from models.simple_model import SimpleRegressor
+from models.animegan import Generator
 from pipelines.simple_pipeline import SimplePipeline
 from datamodules.simple_datamodule import SimpleDatamodule
 
@@ -21,6 +22,7 @@ def get_args():
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--max_steps", type=float, default=10000000)
     parser.add_argument("--batch_size", type=int, default=4)
+    parser.add_argument("--style_transfer", action="store_true")
     return parser.parse_args()
 
 
@@ -32,7 +34,13 @@ def main(args):
     valid_loader = DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False)
 
     model = SimpleRegressor()
-    pipeline = SimplePipeline(model=model, lr=args.lr)
+    style_transfer_model = Generator().eval()
+    pipeline = SimplePipeline(
+        model=model,
+        lr=args.lr,
+        style_transfer=args.style_transfer,
+        style_transfer_model=style_transfer_model,
+    )
 
     trainer = Trainer(max_steps=args.max_steps)
     trainer.fit(
