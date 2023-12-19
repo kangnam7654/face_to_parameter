@@ -6,7 +6,7 @@ from torch.utils.data import random_split
 
 from pytorch_lightning import Trainer
 import pytorch_lightning as pl
-
+from facenet_pytorch import InceptionResnetV1
 from models.simple_model import SimpleRegressor
 from models.animegan import Generator
 from pipelines.simple_pipeline import SimplePipeline
@@ -19,7 +19,7 @@ pl.seed_everything(2024)
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir", type=str, default="./data")
-    parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--max_steps", type=float, default=10000000)
     parser.add_argument("--batch_size", type=int, default=4)
     parser.add_argument("--style_transfer", action="store_true")
@@ -32,11 +32,12 @@ def main(args):
     train_dataset, valid_dataset = random_split(dataset, (0.8, 0.2))
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     valid_loader = DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False)
-
-    model = SimpleRegressor()
+    
+    encoder = InceptionResnetV1()
+    regressor = SimpleRegressor()
     style_transfer_model = Generator().eval()
     pipeline = SimplePipeline(
-        model=model,
+        model=regressor,
         lr=args.lr,
         style_transfer=args.style_transfer,
         style_transfer_model=style_transfer_model,
