@@ -8,14 +8,14 @@ from torch.utils.data import DataLoader
 from torchvision.utils import make_grid
 
 from datamodules.simple_datamodule import SimpleDatamodule
-from models.animegan import Generator
+from models.imitator import Imitator
 
 
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--root_dir", type=str)
     parser.add_argument("--iteration", type=int, default=1000000)
-    parser.add_argument("--lr", type=float, default=1e-4)
+    parser.add_argument("--lr", type=float, default=2e-3)
     return parser.parse_args()
 
 
@@ -62,10 +62,12 @@ def concat_tensor_images(
             normalize=True,
             value_range=(-1, 1),
         )
-        .permute(1, 2, 0)
-        .cpu()
+        .permute(1, 2, 0).cpu()
         .numpy()
     )
+    grid = np.clip(grid, 0, 1)
+    grid = (grid) * 255
+    grid = np.array(grid, dtype=np.uint8)
     return grid
 
 
@@ -75,34 +77,48 @@ def image_show(*args, no_convert_indices=None):
     cv2.waitKey(1)
 
 
+def save_image(*args, save_path, no_convert_indieces=None):
+    image = concat_tensor_images(*args, no_convert_indices=no_convert_indieces)
+    cv2.imwrite(save_path, image)
+
+
 def main(args):
-    dataset = SimpleDatamodule(args.root_dir)
+    dataset = SimpleDatamodule(args.root_dir, return_label=True, flip=False)
     loader = DataLoader(dataset, batch_size=2)
-    model = Generator()
+    model = Imitator(37)
     model = model.cuda()
+    ckpt = torch.load("/home/kangnam/project/face_to_parameter/checkpoints/iter00200000.pt")
+    model.load_state_dict(ckpt)
     generators = iter(loader)
-    criterion = nn.L1Loss()
+    criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
     for i in range(args.iteration):
         try:
-            images = next(generators)
+            images, labels = next(generators)
         except:
             generators = iter(loader)
-            images = next(generators)
+            images, labels = next(generators)
 
         images = images.cuda()
+        labels = labels.cuda()
 
-        out = model(images)
+        out = model(labels)
         loss = criterion(out, images)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         print(f"{i+1}/{args.iteration} Train Loss : {loss}")
-        image_show(images, out)
+        if i % 1000 == 0:
+            save_image(images, out, save_path="./log/" + f"{i}".zfill(8) + ".jpg")
+
+        if i % 10000 == 0:
+            torch.save(
+                model.state_dict(), "./checkpoints/iter" + f"{i}".zfill(8) + ".pt"
+            )
 
 
 if __name__ == "__main__":
     args = get_args()
-    args.root_dir = "/home/kangnam/datasets/ffhq"
+    args.root_dir = "./data/cartoon/"
     main(args)

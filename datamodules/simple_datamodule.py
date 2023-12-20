@@ -7,24 +7,21 @@ from PIL import Image
 
 
 class SimpleDatamodule(Dataset):
-    def __init__(self, root_dir, label_dir=None, return_label=False):
+    def __init__(self, root_dir, label_dir=None, return_label=False, flip=True):
         super().__init__()
         self.root_dir = root_dir
         self.label_dir = label_dir
-        
+
         temp = []
         for ext in ["*.jpg", "*png"]:
             globed = Path(self.root_dir).rglob(ext)
             temp.extend(globed)
         self.data = sorted(temp)
-        
-        self.transform = v2.Compose(
-            [
-                v2.RandomHorizontalFlip(),
-                v2.ToTensor(),
-                v2.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
-            ]
-        )
+
+        self.transform = [v2.ToTensor(), v2.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])]
+        if flip:
+            self.transform.insert(0, v2.RandomHorizontalFlip())
+        self.transform = v2.Compose(self.transform)
         self.return_label = return_label
 
     def __len__(self):
@@ -33,7 +30,7 @@ class SimpleDatamodule(Dataset):
     def __getitem__(self, idx):
         image_file = self.data[idx]
         image = self.preprocess(image_file)
-        
+
         if self.return_label:
             label = self.get_label(image_file)
             return image, label
