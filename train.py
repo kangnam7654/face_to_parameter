@@ -8,7 +8,7 @@ from pytorch_lightning import Trainer
 import pytorch_lightning as pl
 from facenet_pytorch import InceptionResnetV1
 from models.simple_model import SimpleRegressor
-from models.animegan import Generator
+from models.style_transfer import Generator
 from pipelines.simple_pipeline import SimplePipeline
 from datamodules.simple_datamodule import SimpleDatamodule
 

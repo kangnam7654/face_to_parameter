@@ -16,6 +16,7 @@ def get_args():
     parser.add_argument("--root_dir", type=str)
     parser.add_argument("--iteration", type=int, default=1000000)
     parser.add_argument("--lr", type=float, default=2e-3)
+    parser.add_argument("--device", type=str, default="mps")
     return parser.parse_args()
 
 
@@ -62,7 +63,8 @@ def concat_tensor_images(
             normalize=True,
             value_range=(-1, 1),
         )
-        .permute(1, 2, 0).cpu()
+        .permute(1, 2, 0)
+        .cpu()
         .numpy()
     )
     grid = np.clip(grid, 0, 1)
@@ -85,10 +87,8 @@ def save_image(*args, save_path, no_convert_indieces=None):
 def main(args):
     dataset = SimpleDatamodule(args.root_dir, return_label=True, flip=False)
     loader = DataLoader(dataset, batch_size=2)
-    model = Imitator(37)
-    model = model.cuda()
-    ckpt = torch.load("/home/kangnam/project/face_to_parameter/checkpoints/iter00200000.pt")
-    model.load_state_dict(ckpt)
+    model = Imitator(512)
+    model = model.to(args.device)
     generators = iter(loader)
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -100,8 +100,8 @@ def main(args):
             generators = iter(loader)
             images, labels = next(generators)
 
-        images = images.cuda()
-        labels = labels.cuda()
+        images = images.to(args.device)
+        labels = labels.to(args.device)
 
         out = model(labels)
         loss = criterion(out, images)
@@ -120,5 +120,5 @@ def main(args):
 
 if __name__ == "__main__":
     args = get_args()
-    args.root_dir = "./data/cartoon/"
+    args.root_dir = "./data/"
     main(args)

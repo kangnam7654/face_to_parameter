@@ -3,17 +3,6 @@ import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 
-
-class RMSELoss(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.mse = nn.MSELoss()
-
-    def forward(self, x1, x2):
-        loss = self.mse(x1, x2)
-        return torch.sqrt(loss)
-
-
 class SimplePipeline(pl.LightningModule):
     def __init__(
         self,
@@ -22,12 +11,18 @@ class SimplePipeline(pl.LightningModule):
         lr,
         style_transfer: bool = False,
         style_transfer_model: nn.Module = None,
+        imitator: nn.Module = None,
     ):
         super().__init__()
         self.model = model
+        self.imitator = imitator
         self.encoder = encoder
         self.lr = lr
-        self.criterion = RMSELoss()
+        self.cos_loss = nn.CosineEmbeddingLoss()
+        self.l1_loss = nn.L1Loss()
+        self.w_param = 1
+        self.w_embed = 1
+        
         self.style_transfer = style_transfer
         self.style_transfer_model = style_transfer_model
 
@@ -42,18 +37,19 @@ class SimplePipeline(pl.LightningModule):
         return loss
 
     def loop(self, batch):
-        image, label = batch
-        if self.style_transfer:
-            transfered_image = self.style_transfer_model(image)
-        vector = self.encoder(transfered_image)
-        out = self.model(vector)
-        loss = self.compute_criterion(out, label)
+        real_image, _ = batch
+        transfered_image = self.style_transfer_model(real_image)
+        real_param, real_embed = self.model(transfered_image)
+        
+        fake_image = self.imitator(real_param)
+        fake_param, fake_embed = self.model(fake_image)
+        
+        param_loss = self.l1_loss(fake_param, real_param)
+        embed_loss = self.cos_loss(fake_embed, real_embed, 1)
+        loss = self.w_param * param_loss + self.w_embed * embed_loss
         return loss
-
+    
+    
     def configure_optimizers(self):
         opt = torch.optim.Adam(self.model.parameters(), lr=self.lr)
         return opt
-
-    def compute_criterion(self, out, label):
-        loss = self.criterion(out, label)
-        return loss

@@ -1,5 +1,5 @@
 import torch.nn as nn
-
+from facenet_pytorch import InceptionResnetV1
 
 class FcBnReLU(nn.Module):
     def __init__(
@@ -99,6 +99,7 @@ class ResAttBlock(nn.Module):
 class Translator(nn.Module):
     def __init__(self, in_features, out_features=37, bias=True, device=None):
         super().__init__()
+        self.encoder = InceptionResnetV1(pretrained=True).eval()
         self.fc1 = nn.Linear(
             in_features=in_features, out_features=512, bias=bias, device=device
         )
@@ -118,3 +119,15 @@ class Translator(nn.Module):
             device=device,
         )
         self.fc2 = nn.Linear(in_features=512, out_features=out_features)
+
+    def forward(self, x):
+        embed = self.encoder(x)
+        x = self.fc1(embed)
+        residual1 = self.res_att1(x)
+        residual1 = residual1 + x
+        residual2 = self.res_att2(residual1)
+        residual2 = residual2 + residual1
+        residual3 = self.res_att3(residual2)
+        residual3 = residual3 + residual2
+        x = self.fc2(residual3)
+        return x, embed

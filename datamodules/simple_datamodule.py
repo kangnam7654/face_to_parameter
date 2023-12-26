@@ -18,7 +18,11 @@ class SimpleDatamodule(Dataset):
             temp.extend(globed)
         self.data = sorted(temp)
 
-        self.transform = [v2.ToTensor(), v2.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])]
+        self.transform = [
+            v2.Resize((256, 256), interpolation=v2.InterpolationMode.LANCZOS),
+            v2.ToTensor(),
+            v2.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
+        ]
         if flip:
             self.transform.insert(0, v2.RandomHorizontalFlip())
         self.transform = v2.Compose(self.transform)
