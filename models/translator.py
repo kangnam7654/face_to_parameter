@@ -94,14 +94,15 @@ class ResAttBlock(nn.Module):
         x = self.fc_sigmoid(x)
         x = x * residual  # Element wise product
         x = self.relu(x)
+        return x
 
 
 class Translator(nn.Module):
-    def __init__(self, in_features, out_features=37, bias=True, device=None):
+    def __init__(self, out_features=37, bias=True, device=None):
         super().__init__()
-        self.encoder = InceptionResnetV1(pretrained=True).eval()
+        self.encoder = InceptionResnetV1(pretrained="vggface2").eval()
         self.fc1 = nn.Linear(
-            in_features=in_features, out_features=512, bias=bias, device=device
+            in_features=512, out_features=512, bias=bias, device=device
         )
         self.res_att1 = ResAttBlock(
             in_features=512,

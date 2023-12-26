@@ -14,23 +14,15 @@ You can install these requirements directly using the command below:
 pip install torch pytorch-lightning opencv-python
 ```
 
-## Installation
-To set up the project, run the following command:
-```bash
-git clone [repository-url]
-cd [repository-name]
-pip install -r requirements.txt
-```
-
 ## Data
-The project utilizes real human face images. For privacy and ethical reasons, the actual dataset used is not publicly shared. However, a sample dataset can be generated using.
-
-The dataset should follow this format:
-- Each image file should be named with a unique identifier.
-- Associated parameters for each face should be stored in a separate file, preferably in CSV format.
+- FFHQ
+- PersonAI Cartoon Dataset
+- Label files encoded by FaceNet
 
 ## Model Training and Prediction
-The project uses a convolutional neural network (CNN) for facial recognition and parameter prediction. Training details, including hyperparameters and training procedure, are documented in `training_documentation.md`.
+```python
+python train.py
+```
 
 
 ## Contributing
