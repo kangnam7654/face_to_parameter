@@ -8,7 +8,7 @@ from pytorch_lightning import Trainer
 import pytorch_lightning as pl
 
 from models.translator import Translator
-from models.style_transfer import Generator
+from models.animegan import Generator
 from models.imitator import Imitator
 
 from pipelines.pipeline import Pipeline

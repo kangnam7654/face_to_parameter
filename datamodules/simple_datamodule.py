@@ -42,7 +42,7 @@ class SimpleDatamodule(Dataset):
 
     def preprocess(self, image):
         if isinstance(image, str) or isinstance(image, Path):
-            image = Image.open(image)
+            image = Image.open(image).convert("RGB")
         elif isinstance(image, np.ndarray):
             image = Image.fromarray(image)
 
@@ -55,7 +55,7 @@ class SimpleDatamodule(Dataset):
 
         label = Path(image_file).with_suffix(".txt")
         if not label.is_file():
-            raise FileExistsError("The label is not exist!")
+            raise FileExistsError("The label does not exist!")
 
         new = []
         with open(label, "r", encoding="utf-8") as f:
