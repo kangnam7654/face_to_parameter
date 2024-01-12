@@ -22,6 +22,7 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir", type=str, default="./data")
     parser.add_argument("--lr", type=float, default=1e-4)
+    parser.add_argument("--resolution", type=int, default=256)
     parser.add_argument("--max_steps", type=float, default=10000000)
     parser.add_argument("--batch_size", type=int, default=2)
     return parser.parse_args()
@@ -34,13 +35,13 @@ def main(args):
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     valid_loader = DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False)
 
-    model = Translator(out_features=512)
+    predictor = Translator(out_features=512)
     style_transfer_model = Generator().eval()
     imitator = Imitator(latent_dim=512).eval()
 
     pipeline = Pipeline(
-        model=model,
-        style_transfer_model=style_transfer_model,
+        predictor=predictor,
+        style_transfer=style_transfer_model,
         imitator=imitator,
         lr=args.lr,
     )

@@ -1,6 +1,7 @@
 import torch.nn as nn
 from facenet_pytorch import InceptionResnetV1
 
+
 class FcBnReLU(nn.Module):
     def __init__(
         self, in_features: int, out_features: int, bias: bool = True, device=None
