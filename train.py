@@ -67,9 +67,9 @@ def main(args):
     # ===============
     # | Models Load |
     # ===============
-    predictor = Translator(out_features=512)
+    predictor = Translator(out_features=37)
     style_transfer_model = Generator().eval()
-    imitator = Imitator(latent_dim=512).eval()
+    imitator = Imitator(latent_dim=37).eval()
 
     # =====================
     # | Load Model Weight |
@@ -83,7 +83,7 @@ def main(args):
         predictor.load_state_dict(weight_predictor)
 
     if args.weight_style_transfer is not None:
-        weight_style_transfer = torch.load(args.weight_style_trransfer)
+        weight_style_transfer = torch.load(args.weight_style_transfer)
         style_transfer_model.load_state_dict(weight_style_transfer)
 
     # ================

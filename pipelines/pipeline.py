@@ -1,9 +1,10 @@
 from pathlib import Path
-from pytorch_lightning.utilities.types import STEP_OUTPUT
+import numpy as np
+import cv2
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
-from torchvision.utils import save_image
+from torchvision.utils import make_grid
 
 
 class Pipeline(pl.LightningModule):
@@ -50,12 +51,12 @@ class Pipeline(pl.LightningModule):
         # | Image Save |
         if self.training_step_counter % self.image_save_interval == 0:
             full_path = self.save_dir.joinpath(f"{self.training_step_counter}".zfill(8) + ".jpg")
-            save_image([real_image, transfered_image, fake_image], full_path)
+            self.save_image(real_image, transfered_image, fake_image, fp=full_path)
 
         self.training_step_counter += 1
         return loss
 
-    def validation_step(self, batch, batch_idx) -> STEP_OUTPUT | None:
+    def validation_step(self, batch, batch_idx):
         loss, _, _, _ = self.loop(batch, step="Valid")
         return loss
 
@@ -88,3 +89,13 @@ class Pipeline(pl.LightningModule):
     def configure_optimizers(self):
         opt = torch.optim.Adam(self.predictor.parameters(), lr=self.lr)
         return opt
+
+    def save_image(self, *images, fp):
+        images = [*images]
+        images = torch.concat(images, dim=-1)
+        grid = make_grid(images, nrow=1, normalize=True, value_range=(-1, 1))
+        grid = grid.detach().cpu().mul(255).add(0.5).permute(1, 2, 0).numpy()
+        grid = grid.astype(np.uint8)
+        grid = cv2.cvtColor(grid, cv2.COLOR_RGB2BGR)
+        grid = cv2.imwrite(filename=str(fp), img=grid)
+        
