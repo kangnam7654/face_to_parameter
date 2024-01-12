@@ -1,16 +1,20 @@
+from pathlib import Path
 from pytorch_lightning.utilities.types import STEP_OUTPUT
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
+from torchvision.utils import save_image
 
 
 class Pipeline(pl.LightningModule):
     def __init__(
         self,
         predictor: nn.Module,
-        imitator: nn.Module = None,
-        style_transfer: nn.Module = None,
+        imitator: nn.Module,
+        style_transfer: nn.Module,
+        save_dir="./logs",
         lr=1e-3,
+        image_save_interval=100,
         show: bool = False,
     ):
         super().__init__()
@@ -28,16 +32,31 @@ class Pipeline(pl.LightningModule):
         self.w_idt = 1
         self.w_loop = 1
 
+        # Save Args
+        self.image_save_interval = image_save_interval
+        self.save_dir = Path(save_dir)
+        self.save_dir.mkdir(parents=True, exist_ok=True)
+        
+        # else
+        self.training_step_counter = 0
+
     def forward(self, image: torch.Tensor):
         slide_value, encoded = self.predictor(image)
         return slide_value, encoded
 
     def training_step(self, batch, batch_idx):
-        loss = self.loop(batch, step="Train")
+        loss, real_image, transfered_image, fake_image = self.loop(batch, step="Train")
+
+        # | Image Save |
+        if self.training_step_counter % self.image_save_interval == 0:
+            full_path = self.save_dir.joinpath(f"{self.training_step_counter}".zfill(8) + ".jpg")
+            save_image([real_image, transfered_image, fake_image], full_path)
+
+        self.training_step_counter += 1
         return loss
 
     def validation_step(self, batch, batch_idx) -> STEP_OUTPUT | None:
-        loss = self.loop(batch, step="Valid")
+        loss, _, _, _ = self.loop(batch, step="Valid")
         return loss
 
     def loop(self, batch, step="Train"):
@@ -64,8 +83,8 @@ class Pipeline(pl.LightningModule):
         }
         self.log_dict(to_log, prog_bar=True)
 
-        return loss
+        return loss, real_image, transfered_image, fake_image
 
     def configure_optimizers(self):
-        opt = torch.optim.Adam(self.model.parameters(), lr=self.lr)
+        opt = torch.optim.Adam(self.predictor.parameters(), lr=self.lr)
         return opt

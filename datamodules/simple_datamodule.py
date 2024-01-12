@@ -7,10 +7,13 @@ from PIL import Image
 
 
 class SimpleDatamodule(Dataset):
-    def __init__(self, root_dir, label_dir=None, return_label=False, flip=True):
+    def __init__(
+        self, root_dir, label_dir=None, return_label=False, flip=True, resolution=256
+    ):
         super().__init__()
         self.root_dir = root_dir
         self.label_dir = label_dir
+        self.resolution = resolution
 
         temp = []
         for ext in ["*.jpg", "*png"]:
@@ -19,7 +22,10 @@ class SimpleDatamodule(Dataset):
         self.data = sorted(temp)
 
         self.transform = [
-            v2.Resize((256, 256), interpolation=v2.InterpolationMode.LANCZOS),
+            v2.Resize(
+                (self.resolution, self.resolution),
+                interpolation=v2.InterpolationMode.LANCZOS,
+            ),
             v2.ToTensor(),
             v2.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
         ]
