@@ -1,73 +1,66 @@
 from pathlib import Path
+
+import cv2
 import numpy as np
+import polars as pl
 import torch
-from torchvision.transforms import v2
 from torch.utils.data import Dataset
-from PIL import Image
+from torchvision.transforms import v2
 
 
 class SimpleDatamodule(Dataset):
     def __init__(
-        self, root_dir, label_dir=None, return_label=False, flip=True, resolution=256
+        self,
+        csv_or_parquet: str | Path,
+        return_label=False,
+        flip=True,
+        resolution=512,
     ):
+
         super().__init__()
-        self.root_dir = root_dir
-        self.label_dir = label_dir
+        self.data = (
+            pl.read_csv(csv_or_parquet)
+            if str(csv_or_parquet).endswith(".csv")
+            else pl.read_parquet(csv_or_parquet)
+        )
+
         self.resolution = resolution
-
-        temp = []
-        for ext in ["*.jpg", "*png"]:
-            globed = Path(self.root_dir).rglob(ext)
-            temp.extend(globed)
-        self.data = sorted(temp)
-
-        self.transform = [
-            v2.Resize(
-                (self.resolution, self.resolution),
-                interpolation=v2.InterpolationMode.LANCZOS,
-            ),
-            v2.ToTensor(),
-            v2.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
-        ]
+        self.transform = self.default_transform()
         if flip:
             self.transform.insert(0, v2.RandomHorizontalFlip())
-        self.transform = v2.Compose(self.transform)
         self.return_label = return_label
 
     def __len__(self):
-        return len(self.data)
+        return self.data.height
 
-    def __getitem__(self, idx):
-        image_file = self.data[idx]
+    def __getitem__(self, idx) -> tuple[torch.Tensor, torch.Tensor]:
+        image_file, label_file = self.data.row(idx)
         image = self.preprocess(image_file)
 
+        label = torch.tensor([0])
         if self.return_label:
-            label = self.get_label(image_file)
-            return image, label
-        return image
+            label = self.get_label_npy(label_file)
+        return (image, label)
 
     def preprocess(self, image):
-        if isinstance(image, str) or isinstance(image, Path):
-            image = Image.open(image).convert("RGB")
-        elif isinstance(image, np.ndarray):
-            image = Image.fromarray(image)
+        image = cv2.imread(image)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         image = self.transform(image)
         return image
 
-    def get_label(self, image_file):
-        if self.label_dir is None:
-            self.label_dir = self.root_dir
+    def get_label_npy(self, label_path) -> torch.Tensor:
+        label = np.load(label_path)
+        return torch.from_numpy(label)
 
-        label = Path(image_file).with_suffix(".txt")
-        if not label.is_file():
-            raise FileExistsError("The label does not exist!")
-
-        new = []
-        with open(label, "r", encoding="utf-8") as f:
-            lines = f.readlines()
-        for line in lines:
-            line = line.replace("\n", "").strip()
-            new.append(float(line))
-        to_return = torch.tensor(new)
-        return to_return
+    def default_transform(self):
+        return v2.Compose(
+            [
+                v2.ToTensor(),
+                v2.Resize(
+                    (self.resolution, self.resolution),
+                    # interpolation=v2.InterpolationMode.LANCZOS,
+                ),
+                v2.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
+            ]
+        )

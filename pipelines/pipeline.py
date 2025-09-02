@@ -1,9 +1,10 @@
 from pathlib import Path
-import numpy as np
+
 import cv2
+import numpy as np
+import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-import pytorch_lightning as pl
 from torchvision.utils import make_grid
 
 
@@ -37,7 +38,7 @@ class Pipeline(pl.LightningModule):
         self.image_save_interval = image_save_interval
         self.save_dir = Path(save_dir)
         self.save_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # else
         self.training_step_counter = 0
 
@@ -50,7 +51,9 @@ class Pipeline(pl.LightningModule):
 
         # | Image Save |
         if self.training_step_counter % self.image_save_interval == 0:
-            full_path = self.save_dir.joinpath(f"{self.training_step_counter}".zfill(8) + ".jpg")
+            full_path = self.save_dir.joinpath(
+                f"{self.training_step_counter}".zfill(8) + ".jpg"
+            )
             self.save_image(real_image, transfered_image, fake_image, fp=full_path)
 
         self.training_step_counter += 1
@@ -98,4 +101,3 @@ class Pipeline(pl.LightningModule):
         grid = grid.astype(np.uint8)
         grid = cv2.cvtColor(grid, cv2.COLOR_RGB2BGR)
         grid = cv2.imwrite(filename=str(fp), img=grid)
-        

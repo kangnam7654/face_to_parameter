@@ -1,0 +1,14 @@
+[project]
+name = "face-to-parameter"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "facenet-pytorch>=2.6.0",
+    "lightning>=2.5.4",
+    "opencv-python>=4.11.0.86",
+    "polars>=1.32.3",
+    "setuptools>=80.9.0",
+    "torch>=2.2.2",
+    "tqdm>=4.67.1",
+    "wandb>=0.21.3",
+]

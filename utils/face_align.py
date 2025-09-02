@@ -1,8 +1,7 @@
 import argparse
 from pathlib import Path
-from tqdm import tqdm
-import cv2
 
+import cv2
 import numpy as np
 from facenet_pytorch import MTCNN
 

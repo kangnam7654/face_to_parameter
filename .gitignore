@@ -4,3 +4,8 @@ data
 checkpoints
 logs
 weights
+playgound*
+wandb
+face_to_parameter
+playground*
+log*

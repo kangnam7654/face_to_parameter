@@ -1,6 +1,7 @@
 import argparse
-from pathlib import Path
 import random
+from pathlib import Path
+
 import cv2
 from tqdm import tqdm
 
