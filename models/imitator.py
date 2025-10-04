@@ -183,14 +183,18 @@ class DDownBlock(nn.Module):
 
 
 class ProjectionDiscriminator(nn.Module):
-    """
-    입력:  x=[B,3,512,512], label=[B,960]
-    출력:  logit=[B,1], feat=[B,feat_dim]  # feat는 (선택) feature matching용
+    """A projection-based discriminator.
+    Inputs:
+        x (torch.Tensor): Input image tensor of shape [B, 3, 512, 512].
+        label (torch.Tensor): Conditional label tensor of shape [B, 960].
+    Outputs:
+        logit (torch.Tensor): Output logit tensor of shape [B, 1].
+        feat (torch.Tensor): Feature tensor of shape [B, feat_dim] for feature matching (optional).
     """
 
     def __init__(self, in_ch=3, base_ch=64, cond_in=960, cond_dim=256, feat_dim=1024):
         super().__init__()
-        # 512 -> 256 -> 128 -> 64 -> 32 -> 16 -> 8 -> 4
+        # Backbone: 512 -> 256 -> 128 -> 64 -> 32 -> 16 -> 8 -> 4
         self.backbone = nn.Sequential(
             DDownBlock(in_ch, base_ch),  # 512 -> 256
             DDownBlock(base_ch, base_ch * 2),  # 256 -> 128
@@ -200,17 +204,17 @@ class ProjectionDiscriminator(nn.Module):
             DDownBlock(base_ch * 8, base_ch * 8),  # 16  -> 8
             DDownBlock(base_ch * 8, base_ch * 16),  # 8   -> 4
         )
-        # 4x4 -> 1x1 -> feat
+        # Convert 4x4 feature map to a feature vector
         self.to_feat = nn.Sequential(
             spectral_norm(
                 nn.Conv2d(base_ch * 16, feat_dim, kernel_size=4, stride=1, padding=0)
             ),
             nn.LeakyReLU(0.2, inplace=True),
         )
-        # 기본 스칼라 로짓
+        # Unconditional logit output
         self.lin = spectral_norm(nn.Linear(feat_dim, 1))
 
-        # 조건 임베딩 투사: 960 -> cond_dim -> feat_dim (Wc)
+        # Conditional projection: 960 -> cond_dim -> feat_dim (Wc)
         self.cond_proj = nn.Sequential(
             nn.Linear(cond_in, 512),
             nn.SiLU(),
@@ -223,9 +227,11 @@ class ProjectionDiscriminator(nn.Module):
         f = self.to_feat(h).flatten(1)  # [B, feat_dim]
         base = self.lin(f)  # [B, 1]
 
-        c = self.cond_proj(label)  # [B, cond_dim]
-        wc = self.embed(c)  # [B, feat_dim]
-        proj = (f * wc).sum(dim=1, keepdim=True)  # [B, 1]
+        # NOTE: Conditional projection logic is currently disabled.
+        # c = self.cond_proj(label)  # [B, cond_dim]
+        # wc = self.embed(c)  # [B, feat_dim]
+        # proj = (f * wc).sum(dim=1, keepdim=True)  # [B, 1]
+        # logit = base + proj
 
-        logit = base + proj
+        logit = base
         return logit, f
