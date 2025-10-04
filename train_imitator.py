@@ -19,9 +19,10 @@ logging.basicConfig(level=logging.INFO)
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--csv_or_parquet", type=str)
+    parser.add_argument("--csv_or_parquet", type=str, required=True)
+    parser.add_argument("--checkpoint_path", type=str, default=None)
     parser.add_argument("--iteration", type=int, default=1000000)
-    parser.add_argument("--lr", type=float, default=2e-3)
+    parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--device", type=str, default="mps")
     parser.add_argument("--batch_size", type=int, default=16)
     return parser.parse_args()
@@ -42,12 +43,12 @@ def main(args):
     # Model Load
     model = Imitator(960)
     discriminator = ProjectionDiscriminator(in_ch=3, cond_in=960)
-    ckpt = torch.load(
-        "/home/kangnam/projects/face_to_parameter/checkpoints_/ckpt_0000018000.ckpt"
-    )
 
-    model.load_state_dict(ckpt["G_ema"])
-    discriminator.load_state_dict(ckpt["D"])
+    if args.checkpoint_path:
+        logger.info(f"Loading checkpoint from: {args.checkpoint_path}")
+        ckpt = torch.load(args.checkpoint_path)
+        model.load_state_dict(ckpt["G_ema"])
+        discriminator.load_state_dict(ckpt["D"])
 
     pipeline = ImitatorPipeline(
         imitator=model,
@@ -56,7 +57,7 @@ def main(args):
         adv_loss=nn.MSELoss(),
         G_lr=args.lr,
         D_lr=args.lr,
-        gamma=0.3,
+        gamma=0.05,
     )
 
     wandb_logger = WandbLogger(project="face_to_parameter", log_model="all")

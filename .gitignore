@@ -1,11 +1,28 @@
-lightning_logs
-data
-*pyc
-checkpoints
-logs
-weights
-playgound*
-wandb
-face_to_parameter
-playground*
-log*
+# Environments
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Logs and artifacts
+lightning_logs/
+logs/
+wandb/
+log_images/
+
+# Data
+data/
+*.parquet
+
+# Model files
+checkpoints/
+weigths/
+*.pt
+
+# Playgrounds
+playground/
+playground.py
+
+# Scripts
+*.sh
