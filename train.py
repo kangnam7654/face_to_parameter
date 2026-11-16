@@ -8,7 +8,7 @@ import pytorch_lightning as pl
 
 from models.translator import Translator
 from models.animegan import Generator
-from models.imitator import Imitator
+from models.legacy_imitator import LegacyImitator, load_legacy_imitator
 from pipelines.pipeline import Pipeline
 from datamodules.simple_datamodule import SimpleDatamodule
 
@@ -69,14 +69,16 @@ def main(args):
     # ===============
     predictor = Translator(out_features=37)
     style_transfer_model = Generator().eval()
-    imitator = Imitator(latent_dim=37).eval()
+    # The 37-D generator used here is the legacy architecture matching
+    # weigths/imitator.pt, not the newer 960-D FiLM Imitator.
+    imitator = LegacyImitator(latent_dim=37).eval()
 
     # =====================
     # | Load Model Weight |
     # =====================
     if args.weight_imitator is not None:
-        weight_imitator = torch.load(args.weight_imitator)
-        imitator.load_state_dict(weight_imitator)
+        # CPU, weights_only=True, strict schema check; raises on incompatibility.
+        imitator = load_legacy_imitator(args.weight_imitator, latent_dim=37)
 
     if args.weight_predictor is not None:
         weight_predictor = torch.load(args.weight_predictor)
