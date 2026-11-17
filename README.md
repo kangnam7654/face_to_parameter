@@ -15,11 +15,11 @@ A PyTorch proof-of-concept for mapping face images to a controllable parameter v
 
 ```bash
 python infer_legacy.py \
-  --checkpoint weigths/imitator.pt \
   --seed 0 \
-  --output /tmp/legacy_imitator_seed0.png
+  --output ../face.png
 ```
 
+- The CLI uses the tracked `weigths/imitator.pt` by default; pass `--checkpoint` to use another compatible legacy state dict. `../face.png` keeps the generated image outside the checkout.
 - **Input:** no face image is read. The input is a **synthetic** 37-D vector, sampled uniformly from `[0, 1)` with a seeded CPU `torch.Generator`. The same seed always gives the same vector. The meaning and intended range of the 37 parameters are not documented in this repository, so the vector is only a probe.
 - **Output:** exactly one 256x256 RGB PNG, written to the path passed in `--output`. That flag is required. The path must end in `.png` and its parent directory must already exist. The script won't overwrite an existing file unless you pass `--overwrite`. Write the file outside the checkout, and do not commit generated images.
 - **Safety:** the checkpoint is loaded with `torch.load(..., map_location="cpu", weights_only=True)` and checked against the exact 12-key legacy schema (key names, shapes, dtypes, finite values). It is then loaded with `strict=True`. An incompatible file is reported as an error and is never partially loaded. Before saving, the script checks the output's shape, that every value is finite, and that values fall within the Tanh range `[-1, 1]`. The script does not download anything, collect telemetry or call any external service.

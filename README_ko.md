@@ -15,11 +15,11 @@
 
 ```bash
 python infer_legacy.py \
-  --checkpoint weigths/imitator.pt \
   --seed 0 \
-  --output /tmp/legacy_imitator_seed0.png
+  --output ../face.png
 ```
 
+- CLI는 기본적으로 저장소에 포함된 `weigths/imitator.pt`를 사용합니다. 다른 호환 레거시 state dict를 사용하려면 `--checkpoint`를 지정하세요. `../face.png`는 생성 이미지를 저장소 밖에 둡니다.
 - **입력:** 얼굴 이미지는 읽지 않습니다. 입력은 **합성** 37차원 벡터이며, 시드가 고정된 CPU `torch.Generator`로 `[0, 1)` 구간에서 균등 샘플링합니다. 같은 시드는 항상 같은 벡터를 만듭니다. 37개 파라미터의 의미와 의도된 범위는 이 저장소에 문서화되어 있지 않으므로, 이 벡터는 동작 확인용일 뿐입니다.
 - **출력:** 256x256 RGB PNG 한 장을 `--output`으로 지정한 경로에 저장합니다. 이 옵션은 필수입니다. 경로는 `.png`로 끝나야 하고 상위 디렉토리가 이미 존재해야 합니다. `--overwrite`를 주지 않으면 기존 파일을 덮어쓰지 않습니다. 파일은 저장소 밖에 저장하고, 생성된 이미지는 커밋하지 마세요.
 - **안전성:** 체크포인트는 `torch.load(..., map_location="cpu", weights_only=True)`로 로드한 뒤 정확한 12개 키의 레거시 스키마(키 이름, shape, dtype, 유한값)와 대조하여 검사합니다. 그다음 `strict=True`로 로드합니다. 호환되지 않는 파일은 오류로 보고하며 절대 부분 로드하지 않습니다. 저장 전에 출력의 shape, 모든 값이 유한한지, 값이 Tanh 범위 `[-1, 1]` 안에 있는지 검사합니다. 스크립트는 다운로드, 텔레메트리 수집, 외부 서비스 호출을 하지 않습니다.
